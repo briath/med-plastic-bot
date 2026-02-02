@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1><i class="fas fa-procedures"></i> Управление услугами</h1>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5><i class="fas fa-list"></i> Список услуг</h5>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addServiceModal">
+                    <i class="fas fa-plus"></i> Добавить услугу
+                </button>
+            </div>
+            <div class="card-body">
+                {% if services %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Название</th>
+                                <th>Цены</th>
+                                <th>Длительность</th>
+                                <th>Источник</th>
+                                <th>Дата создания</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for service in services %}
+                            <tr>
+                                <td>{{ service.id }}</td>
+                                <td>
+                                    <strong>{{ service.name }}</strong>
+                                    {% if service.description %}
+                                    <br><small class="text-muted">{{ service.description[:100] }}...</small>
+                                    {% endif %}
+                                </td>
+                                <td>{{ service.price_range or 'Не указано' }}</td>
+                                <td>{{ service.duration or 'Не указано' }}</td>
+                                <td>
+                                    {% if service.source_url %}
+                                    <a href="{{ service.source_url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-external-link-alt"></i>
+                                    </a>
+                                    {% else %}
+                                    <span class="text-muted">Мануально</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ service.created_at.strftime('%d.%m.%Y') }}</td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-outline-primary" onclick="editService({{ service.id }})">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-outline-danger" onclick="deleteService({{ service.id }})">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center text-muted py-5">
+                    <i class="fas fa-procedures fa-4x mb-3"></i>
+                    <h5>Услуги не найдены</h5>
+                    <p>Добавьте услуги для отображения в боте</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно добавления услуги -->
+<div class="modal fade" id="addServiceModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Добавить услугу</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="serviceForm">
+                    <div class="mb-3">
+                        <label for="serviceName" class="form-label">Название услуги *</label>
+                        <input type="text" class="form-control" id="serviceName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="serviceDescription" class="form-label">Описание</label>
+                        <textarea class="form-control" id="serviceDescription" rows="3"></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="servicePrice" class="form-label">Цены</label>
+                                <input type="text" class="form-control" id="servicePrice" placeholder="от 50 000 до 120 000 руб.">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="serviceDuration" class="form-label">Длительность</label>
+                                <input type="text" class="form-control" id="serviceDuration" placeholder="1-2 часа">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="serviceIndications" class="form-label">Показания</label>
+                        <textarea class="form-control" id="serviceIndications" rows="2"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="serviceMethods" class="form-label">Методики</label>
+                        <textarea class="form-control" id="serviceMethods" rows="2"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="serviceRecovery" class="form-label">Реабилитация</label>
+                        <textarea class="form-control" id="serviceRecovery" rows="2"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="serviceUrl" class="form-label">URL источника</label>
+                        <input type="url" class="form-control" id="serviceUrl">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" onclick="saveService()">Сохранить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let editingServiceId = null;
+
+function editService(serviceId) {
+    editingServiceId = serviceId;
+    // Здесь можно загрузить данные услуги и заполнить форму
+    const modal = new bootstrap.Modal(document.getElementById('addServiceModal'));
+    modal.show();
+}
+
+function deleteService(serviceId) {
+    if (confirm('Вы уверены, что хотите удалить эту услугу?')) {
+        // Здесь можно добавить логику удаления
+        console.log('Delete service:', serviceId);
+    }
+}
+
+function saveService() {
+    const formData = {
+        name: document.getElementById('serviceName').value,
+        description: document.getElementById('serviceDescription').value,
+        price_range: document.getElementById('servicePrice').value,
+        duration: document.getElementById('serviceDuration').value,
+        indications: document.getElementById('serviceIndications').value,
+        methods: document.getElementById('serviceMethods').value,
+        recovery: document.getElementById('serviceRecovery').value,
+        source_url: document.getElementById('serviceUrl').value
+    };
+    
+    if (!formData.name) {
+        alert('Название услуги обязательно для заполнения');
+        return;
+    }
+    
+    // Здесь можно добавить логику сохранения
+    console.log('Save service:', formData);
+    
+    // Закрываем модальное окно
+    bootstrap.Modal.getInstance(document.getElementById('addServiceModal')).hide();
+    
+    // Очищаем форму
+    document.getElementById('serviceForm').reset();
+    editingServiceId = null;
+}
+</script>
+{% endblock %}

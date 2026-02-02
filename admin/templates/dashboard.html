@@ -1,0 +1,244 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1><i class="fas fa-tachometer-alt"></i> Панель управления</h1>
+    </div>
+</div>
+
+<!-- Статистика -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="mb-0">{{ total_requests }}</h4>
+                        <p class="mb-0">Всего заявок</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-clipboard-list fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="mb-0">{{ stats.get('new', 0) }}</h4>
+                        <p class="mb-0">Новые заявки</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-bell fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="mb-0">{{ stats.get('contacted', 0) }}</h4>
+                        <p class="mb-0">На контакте</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-phone fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="mb-0">{{ total_users }}</h4>
+                        <p class="mb-0">Пользователей</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-users fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Графики -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-chart-line"></i> Заявки по дням</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="dailyChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-chart-pie"></i> Статусы заявок</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="statusChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Последние заявки -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5><i class="fas fa-clock"></i> Последние заявки</h5>
+                <a href="/requests" class="btn btn-sm btn-outline-primary">Все заявки</a>
+            </div>
+            <div class="card-body">
+                {% if new_requests %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Имя</th>
+                                <th>Телефон</th>
+                                <th>Услуга</th>
+                                <th>Статус</th>
+                                <th>Дата</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for request in new_requests %}
+                            <tr>
+                                <td>#{{ request.id }}</td>
+                                <td>{{ request.name }}</td>
+                                <td>{{ request.phone }}</td>
+                                <td>{{ request.service.name if request.service else 'N/A' }}</td>
+                                <td>
+                                    <span class="badge bg-{{ 'primary' if request.status == 'new' else 'info' if request.status == 'contacted' else 'success' if request.status == 'appointed' else 'secondary' }}">
+                                        {{ request.status|title }}
+                                    </span>
+                                </td>
+                                <td>{{ request.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-outline-primary" onclick="updateRequestStatus({{ request.id }}, 'contacted')">
+                                            <i class="fas fa-phone"></i>
+                                        </button>
+                                        <button class="btn btn-outline-success" onclick="updateRequestStatus({{ request.id }}, 'appointed')">
+                                            <i class="fas fa-calendar-check"></i>
+                                        </button>
+                                        <button class="btn btn-outline-danger" onclick="updateRequestStatus({{ request.id }}, 'cancelled')">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center text-muted py-4">
+                    <i class="fas fa-inbox fa-3x mb-3"></i>
+                    <p>Новых заявок пока нет</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Загрузка данных для графиков
+async function loadCharts() {
+    try {
+        const response = await fetch('/api/stats');
+        const data = await response.json();
+        
+        // График по дням
+        const dailyCtx = document.getElementById('dailyChart').getContext('2d');
+        new Chart(dailyCtx, {
+            type: 'line',
+            data: {
+                labels: data.daily.map(d => d.date),
+                datasets: [{
+                    label: 'Заявки',
+                    data: data.daily.map(d => d.count),
+                    borderColor: 'rgb(75, 192, 192)',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+        
+        // График по статусам
+        const statusCtx = document.getElementById('statusChart').getContext('2d');
+        new Chart(statusCtx, {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(data.status),
+                datasets: [{
+                    data: Object.values(data.status),
+                    backgroundColor: [
+                        '#007bff',
+                        '#17a2b8',
+                        '#28a745',
+                        '#ffc107',
+                        '#6c757d'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true
+            }
+        });
+    } catch (error) {
+        console.error('Error loading charts:', error);
+    }
+}
+
+// Обновление статуса заявки
+async function updateStatus(requestId, status) {
+    try {
+        const response = await fetch(`/api/requests/${requestId}/status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ status: status })
+        });
+        
+        if (response.ok) {
+            location.reload();
+        } else {
+            alert('Ошибка при обновлении статуса');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Ошибка при обновлении статуса');
+    }
+}
+
+// Загрузка графиков при загрузке страницы
+document.addEventListener('DOMContentLoaded', loadCharts);
+</script>
+{% endblock %}

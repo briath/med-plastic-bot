@@ -1,0 +1,45 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "med-plastic-bot"
+version = "1.0.0"
+description = "AI-powered Telegram bot for plastic surgery clinic"
+authors = [
+    {name = "Developer", email = "dev@example.com"},
+]
+dependencies = [
+    "aiogram>=3.4.1",
+    "sqlalchemy>=2.0.23",
+    "aiosqlite>=0.19.0",
+    "alembic>=1.13.1",
+    "python-dotenv>=1.0.0",
+    "beautifulsoup4>=4.12.2",
+    "requests>=2.31.0",
+    "lxml>=4.9.3",
+    "ollama>=0.1.7",
+    "apscheduler>=3.10.4",
+    "fastapi>=0.104.1",
+    "uvicorn>=0.24.0",
+    "jinja2>=3.1.2",
+    "pydantic>=2.5.0",
+    "pytest>=7.4.3",
+    "pytest-asyncio>=0.21.1",
+]
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+
+[tool.black]
+line-length = 88
+target-version = ['py311']
+
+[tool.isort]
+profile = "black"
+line_length = 88

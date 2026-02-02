@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1><i class="fas fa-list"></i> Заявки на консультацию</h1>
+    </div>
+</div>
+
+<!-- Фильтры -->
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="btn-group" role="group">
+                    <a href="/requests" class="btn btn-outline-primary {{ 'active' if not current_status }}">
+                        Все
+                    </a>
+                    <a href="/requests?status=new" class="btn btn-outline-primary {{ 'active' if current_status == 'new' }}">
+                        Новые
+                    </a>
+                    <a href="/requests?status=contacted" class="btn btn-outline-primary {{ 'active' if current_status == 'contacted' }}">
+                        На контакте
+                    </a>
+                    <a href="/requests?status=appointed" class="btn btn-outline-primary {{ 'active' if current_status == 'appointed' }}">
+                        Назначены
+                    </a>
+                    <a href="/requests?status=cancelled" class="btn btn-outline-primary {{ 'active' if current_status == 'cancelled' }}">
+                        Отменены
+                    </a>
+                </div>
+                <div class="float-end">
+                    <a href="/api/requests/export" class="btn btn-success" id="exportBtn">
+                        <i class="fas fa-download"></i> Экспорт CSV
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Таблица заявок -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                {% if requests %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Имя</th>
+                                <th>Телефон</th>
+                                <th>Услуга</th>
+                                <th>Статус</th>
+                                <th>Предпочтительная дата</th>
+                                <th>Дата создания</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for request in requests %}
+                            <tr>
+                                <td><strong>#{{ request.id }}</strong></td>
+                                <td>{{ request.name }}</td>
+                                <td>
+                                    <a href="tel:{{ request.phone }}">{{ request.phone }}</a>
+                                </td>
+                                <td>{{ request.service_name }}</td>
+                                <td>
+                                    <span class="badge bg-{{ 
+                                        'primary' if request.status == 'new' else 
+                                        'info' if request.status == 'contacted' else 
+                                        'success' if request.status == 'appointed' else 
+                                        'warning' if request.status == 'cancelled' else 
+                                        'secondary' 
+                                    }}">
+                                        {{ request.status|title }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {{ request.preferred_date.strftime('%d.%m.%Y') if request.preferred_date else 'Любое время' }}
+                                </td>
+                                <td>{{ request.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        {% if request.status == 'new' %}
+                                        <a href="/requests/{{ request.id }}/contacted" class="btn btn-outline-primary" title="Отметить как на контакте">
+                                            <i class="fas fa-phone"></i>
+                                        </a>
+                                        {% endif %}
+                                        {% if request.status in ['new', 'contacted'] %}
+                                        <a href="/requests/{{ request.id }}/appointed" class="btn btn-outline-success" title="Назначить консультацию">
+                                            <i class="fas fa-calendar-check"></i>
+                                        </a>
+                                        {% endif %}
+                                        {% if request.status not in ['cancelled', 'completed'] %}
+                                        <a href="/requests/{{ request.id }}/cancelled" class="btn btn-outline-danger" title="Отменить">
+                                            <i class="fas fa-times"></i>
+                                        </a>
+                                        {% endif %}
+                                        {% if request.status == 'appointed' %}
+                                        <a href="/requests/{{ request.id }}/completed" class="btn btn-outline-secondary" title="Завершить">
+                                            <i class="fas fa-check"></i>
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% if request.comment %}
+                            <tr>
+                                <td colspan="8">
+                                    <small class="text-muted">
+                                        <i class="fas fa-comment"></i> <strong>Комментарий:</strong> {{ request.comment }}
+                                    </small>
+                                </td>
+                            </tr>
+                            {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center text-muted py-5">
+                    <i class="fas fa-inbox fa-4x mb-3"></i>
+                    <h5>Заявок не найдено</h5>
+                    <p>Нет заявок с выбранным статусом</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Экспорт в CSV
+document.getElementById('exportBtn').addEventListener('click', async function(e) {
+    e.preventDefault();
+    
+    try {
+        const response = await fetch('/api/requests/export');
+        const data = await response.json();
+        
+        // Создаем blob и скачиваем файл
+        const blob = new Blob([data.csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        
+        link.setAttribute('href', url);
+        link.setAttribute('download', data.filename);
+        link.style.visibility = 'hidden';
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    } catch (error) {
+        console.error('Error exporting data:', error);
+        alert('Ошибка при экспорте данных');
+    }
+});
+</script>
+{% endblock %}

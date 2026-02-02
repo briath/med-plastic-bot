@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  # Telegram бот
+  bot:
+    build: .
+    container_name: med-plastic-bot
+    restart: unless-stopped
+    environment:
+      - BOT_TOKEN=${BOT_TOKEN}
+      - DATABASE_URL=sqlite+aiosqlite:///./data/med_plastic_bot.db
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_MODEL=gpt-4o-mini
+      - OPENAI_BASE_URL=https://api.openai.com/v1
+      - ADMIN_TELEGRAM_ID=${ADMIN_TELEGRAM_ID}
+      - LOG_LEVEL=INFO
+      - CLINIC_NAME=Мед-Пластик
+      - CLINIC_PHONE=+74951234567
+      - CLINIC_EMAIL=info@med-plastic.ru
+      - CLINIC_WEBSITE=https://med-plastic.ru/plastika-verhnih-vek/
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    networks:
+      - med-plastic-network
+
+  # Админ-панель (FastAPI)
+  admin:
+    build: .
+    container_name: med-plastic-admin
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=sqlite+aiosqlite:///./data/med_plastic_bot.db
+      - CLINIC_NAME=Мед-Пластик
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+    command: ["python", "admin/main.py"]
+    depends_on:
+      - bot
+    networks:
+      - med-plastic-network
+
+  # Nginx для проксирования (опционально)
+  nginx:
+    image: nginx:alpine
+    container_name: med-plastic-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - admin
+    networks:
+      - med-plastic-network
+
+networks:
+  med-plastic-network:
+    driver: bridge
