@@ -40,7 +40,7 @@ med-plastic-bot/
 ## 🚀 Быстрый старт
 
 ### Требования
-- Python 3.11+
+- Python 3.8+
 - Docker & Docker Compose
 - Telegram Bot Token
 - OpenAI API Key
