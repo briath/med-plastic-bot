@@ -24,8 +24,8 @@ USER app
 # Копируем исходный код
 COPY --chown=app:app . .
 
-# Создаем директорию для данных
-RUN mkdir -p /app/data
+# Создаем директорию для данных с правильными правами
+RUN mkdir -p /app/data && chown -R app:app /app/data
 
 # Открываем порт для админ-панели
 EXPOSE 8000

@@ -6,6 +6,8 @@ services:
     build: .
     container_name: med-plastic-bot
     restart: unless-stopped
+    volumes:
+      - ./data:/app/data
     environment:
       - BOT_TOKEN=${BOT_TOKEN}
       - DATABASE_URL=sqlite+aiosqlite:///./data/med_plastic_bot.db
@@ -18,9 +20,6 @@ services:
       - CLINIC_PHONE=+74951234567
       - CLINIC_EMAIL=info@med-plastic.ru
       - CLINIC_WEBSITE=https://med-plastic.ru/plastika-verhnih-vek/
-    volumes:
-      - ./data:/app/data
-      - ./logs:/app/logs
     networks:
       - med-plastic-network
 
