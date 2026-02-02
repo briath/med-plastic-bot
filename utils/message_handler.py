@@ -5,6 +5,7 @@ import logging
 from aiogram import types
 from aiogram.exceptions import TelegramNetworkError, TelegramRetryAfter, TelegramBadRequest
 from functools import wraps
+from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = logging.getLogger(__name__)
 

@@ -63,7 +63,6 @@ async def main():
         token=settings.bot_token,
         default=DefaultBotProperties(
             parse_mode="Markdown",
-            disable_web_page_preview=False,
             protect_content=False,
             allow_sending_without_reply=True
         )
@@ -117,6 +116,7 @@ class DbSessionMiddleware:
 
 
 if __name__ == "__main__":
+    logger = logging.getLogger(__name__)
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
