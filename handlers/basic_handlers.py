@@ -10,6 +10,7 @@ from states.consultation import ConsultationStates
 from services.openai_service import openai_service, fallback_service
 from config.settings import settings
 from utils.message_splitter import split_message
+from utils.message_handler import safe_send_message, safe_send_messages
 
 logger = logging.getLogger(__name__)
 router = Router()
@@ -47,8 +48,9 @@ async def cmd_start(message: types.Message, session: AsyncSession, state: FSMCon
 
 Выберите интересующий вас пункт ниже 👇"""
     
-    await message.answer(
-        welcome_text,
+    await safe_send_message(
+        message, 
+        welcome_text, 
         parse_mode="Markdown",
         reply_markup=get_main_keyboard()
     )
@@ -82,14 +84,15 @@ async def cmd_help(message: types.Message):
 
 Если у вас возникли проблемы, напишите @admin"""
     
-    await message.answer(help_text, parse_mode="Markdown")
+    await safe_send_message(message, help_text, parse_mode="Markdown")
 
 
 @router.message(Command("cancel"))
 async def cmd_cancel(message: types.Message, state: FSMContext):
     """Обработчик команды /cancel"""
     await state.clear()
-    await message.answer(
+    await safe_send_message(
+        message,
         "❌ Действие отменено. Вы в главном меню.",
         reply_markup=get_main_keyboard()
     )
@@ -99,7 +102,8 @@ async def cmd_cancel(message: types.Message, state: FSMContext):
 async def btn_cancel(message: types.Message, state: FSMContext):
     """Обработчик кнопки Отмена"""
     await state.clear()
-    await message.answer(
+    await safe_send_message(
+        message,
         "❌ Действие отменено. Вы в главном меню.",
         reply_markup=get_main_keyboard()
     )
@@ -109,7 +113,8 @@ async def btn_cancel(message: types.Message, state: FSMContext):
 async def btn_main_menu(message: types.Message, state: FSMContext):
     """Обработчик кнопки возврата в главное меню"""
     await state.clear()
-    await message.answer(
+    await safe_send_message(
+        message,
         "🏠 Вы в главном меню. Чем могу помочь?",
         reply_markup=get_main_keyboard()
     )
@@ -148,11 +153,11 @@ async def btn_service_info(message: types.Message, session: AsyncSession):
         # Разделяем длинное сообщение на части
         message_parts = split_message(info_text)
         
-        # Отправляем части сообщения
-        for part in message_parts:
-            await message.answer(part, parse_mode="Markdown")
+        # Отправляем части сообщения безопасно
+        await safe_send_messages(message, message_parts, parse_mode="Markdown")
     else:
-        await message.answer(
+        await safe_send_message(
+            message,
             "😔 Информация об услугах временно недоступна. "
             "Пожалуйста, свяжитесь с живым менеджером."
         )
@@ -181,9 +186,10 @@ async def btn_prices(message: types.Message, session: AsyncSession):
 
 Хотите записаться на бесплатную консультацию?"""
         
-        await message.answer(price_text, parse_mode="Markdown")
+        await safe_send_message(message, price_text, parse_mode="Markdown")
     else:
-        await message.answer(
+        await safe_send_message(
+            message,
             "😔 Информация о ценах временно недоступна. "
             "Пожалуйста, свяжитесь с менеджером для уточнения."
         )
@@ -220,7 +226,7 @@ async def btn_contact_manager(message: types.Message, session: AsyncSession):
 
 Могу я помочь вам с чем-то еще пока вы ждете?"""
     
-    await message.answer(contact_text, parse_mode="Markdown")
+    await safe_send_message(message, contact_text, parse_mode="Markdown")
     
     # Логируем запрос
     chat_log_repo = ChatLogRepository(session)
@@ -247,7 +253,7 @@ async def btn_faq(message: types.Message):
 📋 Подготовка к операции
 🏥 Общие вопросы"""
     
-    await message.answer(faq_text, parse_mode="Markdown", reply_markup=get_faq_categories_keyboard())
+    await safe_send_message(message, faq_text, parse_mode="Markdown", reply_markup=get_faq_categories_keyboard())
 
 
 @router.message(F.text == "ℹ️ О клинике")
@@ -270,7 +276,7 @@ async def btn_about_clinic(message: types.Message):
 
 Готова ответить на ваши вопросы о процедурах!"""
     
-    await message.answer(about_text, parse_mode="Markdown")
+    await safe_send_message(message, about_text, parse_mode="Markdown")
 
 
 @router.message()
@@ -333,9 +339,8 @@ async def handle_text_message(message: types.Message, session: AsyncSession, sta
     # Разделяем длинное сообщение на части
     message_parts = split_message(response)
     
-    # Отправляем части сообщения
-    for part in message_parts:
-        await message.answer(part)
+    # Отправляем части сообщения безопасно
+    await safe_send_messages(message, message_parts)
     
     # Логируем диалог (полный ответ)
     await chat_log_repo.create(
