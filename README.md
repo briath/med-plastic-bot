@@ -93,6 +93,19 @@ docker-compose logs -f bot
 
 ### 4. Запуск без Docker
 
+**Способ 1: Установка через pip (рекомендуемый)**
+```bash
+# Установка зависимостей
+pip install -r requirements.txt
+
+# Запуск бота
+python main.py
+
+# Запуск админ-панели (в отдельном терминале)
+python admin/main.py
+```
+
+**Способ 2: Установка в режиме разработки**
 ```bash
 # Установка зависимостей
 pip install -e .

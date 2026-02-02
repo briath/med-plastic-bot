@@ -29,6 +29,23 @@ dependencies = [
 ]
 requires-python = ">=3.8"
 
+[tool.hatch.build.targets.wheel]
+packages = ["."]
+
+[tool.hatch.build]
+include = [
+    "handlers/*",
+    "services/*", 
+    "models/*",
+    "states/*",
+    "keyboards/*",
+    "admin/*",
+    "utils/*",
+    "config/*",
+    "tests/*",
+    "*.py"
+]
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
@@ -38,7 +55,7 @@ python_functions = ["test_*"]
 
 [tool.black]
 line-length = 88
-target-version = ['py311']
+target-version = ['py38']
 
 [tool.isort]
 profile = "black"
