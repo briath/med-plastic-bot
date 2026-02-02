@@ -23,15 +23,12 @@ async def cmd_start(message: types.Message, session: AsyncSession, state: FSMCon
     
     # Получаем или создаем пользователя
     user_repo = UserRepository(session)
-    user = await user_repo.get_by_telegram_id(message.from_user.id)
-    
-    if not user:
-        user = await user_repo.create(
-            telegram_id=message.from_user.id,
-            username=message.from_user.username,
-            first_name=message.from_user.first_name,
-            last_name=message.from_user.last_name
-        )
+    user = await user_repo.get_or_create(
+        telegram_id=message.from_user.id,
+        username=message.from_user.username,
+        first_name=message.from_user.first_name,
+        last_name=message.from_user.last_name
+    )
     
     # Приветственное сообщение
     welcome_text = f"""👋 Добрый день, {message.from_user.first_name or 'гость'}!
@@ -199,16 +196,12 @@ async def btn_prices(message: types.Message, session: AsyncSession):
 async def btn_contact_manager(message: types.Message, session: AsyncSession):
     """Обработчик кнопки 'Связаться с менеджером'"""
     user_repo = UserRepository(session)
-    user = await user_repo.get_by_telegram_id(message.from_user.id)
-    
-    # Если пользователя нет в базе, создаем его
-    if user is None:
-        user = await user_repo.create(
-            telegram_id=message.from_user.id,
-            username=message.from_user.username,
-            first_name=message.from_user.first_name,
-            last_name=message.from_user.last_name
-        )
+    user = await user_repo.get_or_create(
+        telegram_id=message.from_user.id,
+        username=message.from_user.username,
+        first_name=message.from_user.first_name,
+        last_name=message.from_user.last_name
+    )
     
     # Здесь можно добавить логику отправки уведомления менеджеру
     # Например, отправить сообщение в админ-чат
@@ -289,16 +282,12 @@ async def handle_text_message(message: types.Message, session: AsyncSession, sta
         return  # Если в процессе FSM, обрабатываем в других хендлерах
     
     user_repo = UserRepository(session)
-    user = await user_repo.get_by_telegram_id(message.from_user.id)
-    
-    # Если пользователя нет в базе, создаем его
-    if user is None:
-        user = await user_repo.create(
-            telegram_id=message.from_user.id,
-            username=message.from_user.username,
-            first_name=message.from_user.first_name,
-            last_name=message.from_user.last_name
-        )
+    user = await user_repo.get_or_create(
+        telegram_id=message.from_user.id,
+        username=message.from_user.username,
+        first_name=message.from_user.first_name,
+        last_name=message.from_user.last_name
+    )
     
     # Получаем историю диалога
     chat_log_repo = ChatLogRepository(session)

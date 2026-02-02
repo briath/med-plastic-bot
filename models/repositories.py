@@ -16,7 +16,24 @@ class UserRepository:
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
     
-    async def create(self, telegram_id: int, username: str = None, 
+    async def get_or_create(self, telegram_id: int, username: str = None,
+                    first_name: str = None, last_name: str = None) -> User:
+        """Get existing user or create new one"""
+        # Сначала пытаемся найти существующего пользователя
+        user = await self.get_by_telegram_id(telegram_id)
+        
+        if user is None:
+            # Если не найден, создаем нового
+            user = await self.create(
+                telegram_id=telegram_id,
+                username=username,
+                first_name=first_name,
+                last_name=last_name
+            )
+        
+        return user
+    
+    async def create(self, telegram_id: int, username: str = None,
                     first_name: str = None, last_name: str = None) -> User:
         """Create new user"""
         user = User(

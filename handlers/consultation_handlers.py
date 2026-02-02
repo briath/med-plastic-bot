@@ -191,17 +191,13 @@ async def confirm_request(callback: types.CallbackQuery, session: AsyncSession, 
     try:
         # Получаем пользователя
         user_repo = UserRepository(session)
-        user = await user_repo.get_by_telegram_id(callback.from_user.id)
-        
-        # Если пользователя нет в базе, создаем его
-        if user is None:
-            user = await user_repo.create(
-                telegram_id=callback.from_user.id,
-                username=callback.from_user.username,
-                first_name=callback.from_user.first_name,
-                last_name=callback.from_user.last_name,
-                phone=data.get('phone')  # Сохраняем телефон если есть
-            )
+        user = await user_repo.get_or_create(
+            telegram_id=callback.from_user.id,
+            username=callback.from_user.username,
+            first_name=callback.from_user.first_name,
+            last_name=callback.from_user.last_name,
+            phone=data.get('phone')  # Сохраняем телефон если есть
+        )
         
         # Обновляем телефон пользователя
         if not user.phone and data.get('phone'):

@@ -5,6 +5,7 @@ import logging
 from aiogram import types
 from aiogram.exceptions import TelegramNetworkError, TelegramRetryAfter, TelegramBadRequest
 from functools import wraps
+from typing import List
 from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = logging.getLogger(__name__)
@@ -65,7 +66,7 @@ async def safe_send_message(message: types.Message, text: str, **kwargs) -> bool
     return False
 
 
-async def safe_send_messages(message: types.Message, texts: list[str], **kwargs) -> bool:
+async def safe_send_messages(message: types.Message, texts: List[str], **kwargs) -> bool:
     """
     Безопасная отправка нескольких сообщений
     
