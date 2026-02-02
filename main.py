@@ -3,6 +3,7 @@ import logging
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.exceptions import TelegramNetworkError, TelegramRetryAfter
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from config.settings import settings
@@ -49,23 +50,28 @@ async def init_database():
 
 
 async def main():
-    """Главная функция запуска бота"""
-    # Настройка логирования
-    logger = setup_logging()
+    """Основная функция запуска бота"""
+    setup_logging()
+    logger = logging.getLogger(__name__)
     logger.info("Starting Med-Plastic bot...")
     
     # Инициализация базы данных
     await init_database()
     
-    # Создание бота и диспетчера
+    # Создание бота с улучшенными настройками
     bot = Bot(
         token=settings.bot_token,
         default=DefaultBotProperties(
-            parse_mode="Markdown"
+            parse_mode="Markdown",
+            disable_web_page_preview=False,
+            protect_content=False,
+            allow_sending_without_reply=True
         )
     )
     
-    dp = Dispatcher(storage=MemoryStorage())
+    # Создание диспетчера
+    storage = MemoryStorage()
+    dp = Dispatcher(storage=storage)
     
     # Подключаем middleware для работы с БД
     dp.update.middleware(DbSessionMiddleware())
@@ -77,9 +83,28 @@ async def main():
     # Запуск бота
     logger.info("Bot started successfully!")
     try:
+        await dp.start_polling(
+            bot,
+            handle_signals=False,  # Отключаем автоматическую обработку сигналов
+            allowed_updates=["message", "callback_query", "inline_query"],  # Только нужные типы обновлений
+            timeout=30,  # Таймаут получения обновлений
+            close_bot_session=True  # Автоматически закрывать сессию
+        )
+    except TelegramNetworkError as e:
+        logger.error(f"Network error: {e}")
+        logger.info("Attempting to reconnect in 5 seconds...")
+        await asyncio.sleep(5)
+        # Пытаемся перезапустить
         await dp.start_polling(bot)
+    except TelegramRetryAfter as e:
+        logger.warning(f"Rate limit exceeded. Waiting for {e.retry_after} seconds...")
+        await asyncio.sleep(e.retry_after)
+        await dp.start_polling(bot)
+    except KeyboardInterrupt:
+        logger.info("Bot stopped by user")
     finally:
         await bot.session.close()
+        logger.info("Bot session closed")
 
 
 class DbSessionMiddleware:
@@ -95,6 +120,7 @@ if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        print("Bot stopped by user")
+        logger.info("Bot stopped by user")
     except Exception as e:
+        logger.critical(f"Bot stopped with critical error: {e}", exc_info=True)
         print(f"Bot stopped with error: {e}")
