@@ -167,32 +167,6 @@ Email: {settings.clinic_email}
             return []
 
 
-class FallbackService:
-    """Минимальный fallback сервис только для базовых приветствий"""
-    
-    def __init__(self):
-        self.faq_responses = {
-            "привет": [
-                "Здравствуйте! Готова ответить на ваши вопросы о пластической хирургии.",
-                "Добрый день! Чем могу помочь?",
-                "Привет! Что интересует в области эстетической медицины?"
-            ]
-        }
-    
-    async def get_fallback_response(self, message: str) -> Optional[str]:
-        """Возвращает ответ только для базовых приветствий"""
-        message_lower = message.lower()
-        
-        # Проверяем только базовые приветствия
-        for keyword, responses in self.faq_responses.items():
-            if keyword in message_lower:
-                import random
-                return random.choice(responses)
-        
-        # Для всего остального возвращаем None, чтобы использовался веб-поиск
-        return None
-
-
 # Глобальные экземпляры сервисов
 openai_service = OpenAIService()
-fallback_service = FallbackService()
+# fallback_service удален - используем только GPT-4o-mini и веб-поиск

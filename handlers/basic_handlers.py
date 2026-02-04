@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from models.repositories import UserRepository, ServiceRepository, ChatLogRepository
 from keyboards.reply_keyboards import get_main_keyboard
 from states.consultation import ConsultationStates
-from services.openai_service import openai_service, fallback_service
+from services.openai_service import openai_service
 from config.settings import settings
 from utils.message_splitter import split_message
 from utils.message_handler import safe_send_message, safe_send_messages
@@ -312,22 +312,15 @@ async def handle_text_message(message: types.Message, session: AsyncSession, sta
         'history': chat_history
     }
     
-    # Сначала пробуем получить ответ от OpenAI (основной источник)
+    # Сначала пробуем получить ответ от OpenAI (основной и единственный источник)
     response = await openai_service.generate_response(message.text, context)
     
-    # Если OpenAI недоступен, активно используем веб-поиск
+    # Если OpenAI недоступен, используем веб-поиск для всех вопросов
     if not response:
-        # Для всех медицинских вопросов используем веб-поиск
-        medical_keywords = ['хирург', 'операция', 'пластика', 'имплант', 'реабилитация', 'осложнение', 'риск', 'грудь', 'нос', 'живот', 'лицо']
-        if any(keyword in message.text.lower() for keyword in medical_keywords):
-            from services.web_search_service import web_search_service
-            web_response = await web_search_service.search_medical_info(message.text)
-            if web_response:
-                response = web_response
-    
-    # Fallback только для базовых приветствий
-    if not response:
-        response = await fallback_service.get_fallback_response(message.text)
+        from services.web_search_service import web_search_service
+        web_response = await web_search_service.search_medical_info(message.text)
+        if web_response:
+            response = web_response
     
     # Если ничего не сработало, даем стандартный ответ
     if not response:
