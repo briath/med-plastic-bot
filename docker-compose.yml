@@ -7,7 +7,7 @@ services:
     container_name: med-plastic-bot
     restart: unless-stopped
     volumes:
-      - ./data:/app/data
+      - bot_data:/app/data
     environment:
       - BOT_TOKEN=${BOT_TOKEN}
       - DATABASE_URL=sqlite+aiosqlite:///./data/med_plastic_bot.db
@@ -34,7 +34,7 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./data:/app/data
+      - bot_data:/app/data
     command: ["python", "admin/main.py"]
     depends_on:
       - bot
@@ -60,3 +60,7 @@ services:
 networks:
   med-plastic-network:
     driver: bridge
+
+volumes:
+  bot_data:
+    driver: local

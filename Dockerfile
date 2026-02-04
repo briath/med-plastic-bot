@@ -17,15 +17,18 @@ COPY pyproject.toml ./
 RUN pip install --no-cache-dir -e .
 
 # Создаем пользователя для безопасности
-RUN useradd --create-home --shell /bin/bash app \
-    && chown -R app:app /app
-USER app
+RUN useradd --create-home --shell /bin/bash app
 
 # Копируем исходный код
-COPY --chown=app:app . .
+COPY . .
 
-# Создаем директорию для данных с правильными правами
-RUN mkdir -p /app/data && chown -R app:app /app/data
+# Устанавливаем владельца и права
+RUN chown -R app:app /app
+
+# Создаем директорию для данных
+RUN mkdir -p /app/data
+
+USER app
 
 # Открываем порт для админ-панели
 EXPOSE 8000
