@@ -312,17 +312,10 @@ async def handle_text_message(message: types.Message, session: AsyncSession, sta
         'history': chat_history
     }
     
-    # Сначала пробуем получить ответ от OpenAI (основной и единственный источник)
+    # Используем только GPT-4o-mini для всех ответов
     response = await openai_service.generate_response(message.text, context)
     
-    # Если OpenAI недоступен, используем веб-поиск для всех вопросов
-    if not response:
-        from services.web_search_service import web_search_service
-        web_response = await web_search_service.search_medical_info(message.text)
-        if web_response:
-            response = web_response
-    
-    # Если ничего не сработало, даем стандартный ответ
+    # Если GPT недоступен, даем стандартный ответ
     if not response:
         response = """Понимаю ваш вопрос. Чтобы дать вам точную информацию, 
 пожалуйста, выберите конкретную тему из главного меню или 
