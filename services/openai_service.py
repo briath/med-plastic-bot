@@ -24,7 +24,7 @@ class OpenAIService:
         """Генерирует ответ с помощью OpenAI GPT-4o-mini"""
         try:
             # Формируем полный промпт
-            system_prompt, user_message = self._build_prompt(prompt, context)
+            system_prompt, user_message = await self._build_prompt(prompt, context)
             
             # Отправляем запрос к OpenAI
             response = await self._call_openai(system_prompt, user_message, context)
