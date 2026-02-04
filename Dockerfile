@@ -26,7 +26,7 @@ COPY . .
 RUN chown -R app:app /app
 
 # Создаем директорию для данных
-RUN mkdir -p /app/data
+RUN mkdir -p /app/data && chown -R app:app /app/data
 
 USER app
 
