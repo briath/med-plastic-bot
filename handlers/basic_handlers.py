@@ -315,7 +315,17 @@ async def handle_text_message(message: types.Message, session: AsyncSession, sta
     # Сначала пробуем получить ответ от OpenAI
     response = await openai_service.generate_response(message.text, context)
     
-    # Если LLM недоступен, используем fallback
+    # Если LLM недоступен, пробуем веб-поиск для сложных вопросов
+    if not response and len(message.text) > 10:
+        # Проверяем, сложный ли вопрос (содержит медицинские термины)
+        medical_keywords = ['хирург', 'операция', 'пластика', 'имплант', 'реабилитация', 'осложнение', 'риск']
+        if any(keyword in message.text.lower() for keyword in medical_keywords):
+            from services.web_search_service import web_search_service
+            web_response = await web_search_service.search_medical_info(message.text)
+            if web_response:
+                response = web_response
+    
+    # Если и это не сработало, используем fallback
     if not response:
         response = await fallback_service.get_fallback_response(message.text)
     
