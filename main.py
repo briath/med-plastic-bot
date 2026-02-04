@@ -12,6 +12,7 @@ from models.base import create_db, async_session_maker
 from handlers.basic_handlers import router as basic_router
 from handlers.consultation_handlers import router as consultation_router
 from services.parser import WebsiteParser
+from services.website_content_service import website_content_service
 from models.repositories import ServiceRepository
 
 
@@ -57,6 +58,11 @@ async def main():
     
     # Инициализация базы данных
     await init_database()
+    
+    # Предзагружаем контент с сайта для GPT
+    logger.info("Preloading website content...")
+    await website_content_service.preload_all_services()
+    logger.info("Website content preloaded successfully")
     
     # Создание бота с улучшенными настройками
     bot = Bot(
